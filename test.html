@@ -1,0 +1,59 @@
+<html>
+  <head>
+  </head>
+  <body id="body" style="text-align:center;">
+    <input type="file", name="fileSelector1", id="fileSelector", accept="image/*", onchange="openFile(event)", multiple><br>
+    <div>
+      <p id="imgElement" style="color:green; font-size: 20px; font-weight: bold;"></p>
+    </div>
+    <script type="text/javascript"> 
+      //-----------------------------------------------
+      var openFile = async function(event) {var data={};    
+        var input = await event.target;									 
+        var inputDATA = input.files[0];						
+        var fileName = inputDATA.name;						
+        var fileType = inputDATA.type;						
+        var fileSize = inputDATA.size;						
+       	var accepted = input.accept;							
+        var filesTotal = input.files.length;
+        //------------------------------------        
+        var reader = new FileReader(); 
+         reader.onloadend = async function (event) {var img = new Image(); 
+          img.src = await event.target.result;
+          img.onload = function () {
+            data.height = img.height;
+            data.width = img.width;
+            data.fileName = fileName;
+            data.fileSize = fileSize;
+            data.fileType = fileType;
+            data.filesTotal = filesTotal;
+            data.accepted = accepted;    
+            data.base64 = img.src;	 
+            if (filesTotal>=0) {window.parent.postMessage(data,"*");}
+          };
+        };
+	reader.readAsDataURL(inputDATA);    
+        //-----------------------------------
+        window.onmessage = (async(event) => {
+          var uploadURL = event.data; 
+          var formData = await new FormData();
+          formData.append('upload_token', '');
+          formData.append('file', inputDATA);
+          let request = await new XMLHttpRequest();   
+          request.open("POST", uploadURL);
+          request.responseType = "json";
+          request.onreadystatechange = function() {
+            if (request.readyState == XMLHttpRequest.DONE) {
+              const response = request.response; 
+              let resultUrl = 'https://static.wixstatic.com/media/' + response[0].file_name;
+              data.fileInfo=request.response[0];
+              window.parent.postMessage(data,"*");
+            }
+          }
+          request.send(formData);          
+        });
+      };
+      //----------------------------------- 
+    </script>
+  </body>
+</html>
